@@ -108,6 +108,8 @@ public class FilterRuleStyle
     [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
+    [JsonPropertyName("fontSize")]
+    public int FontSize { get; set; } = 32;
     [JsonPropertyName("textColor")]
     public ColorRGBA TextColor { get; set; } = default!;
     [JsonPropertyName("borderColor")]

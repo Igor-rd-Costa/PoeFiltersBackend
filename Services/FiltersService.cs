@@ -92,9 +92,8 @@ public class FiltersService
             {
                 ruleStr += $" \"{items[i].Name}\"";
             }
-            //TODO Add FontSize
-            ruleStr += "\n  SetFontSize 32";
             var style = rule.Style;
+            ruleStr += $"\n  SetFontSize {Math.Clamp(style.FontSize, 1, 45)}";
             ruleStr += $"\n  SetTextColor {style.TextColor}";
             ruleStr += $"\n  SetBorderColor {style.BorderColor}";
             ruleStr += $"\n  SetBackgroundColor {style.BackgroundColor}";
