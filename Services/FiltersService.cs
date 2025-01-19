@@ -1,50 +1,43 @@
-﻿
-
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 public class FiltersService
 {
-    private readonly IMongoCollection<Filter> m_FiltersCollection;
     private readonly ItemsService m_ItemService;
+    private readonly MongoDbContext m_Context;
 
-    public FiltersService(IOptions<MongoDbConfig> config, ItemsService itemService)
+    public FiltersService(ItemsService itemService, MongoDbContext context)
     {
-        var client = new MongoClient(
-            config.Value.ConnectionString);
-        var mongoDb = client.GetDatabase(config.Value.DatabaseName);
-        m_FiltersCollection = mongoDb.GetCollection<Filter>(
-            config.Value.FiltersCollectionName);
         m_ItemService = itemService;
+        m_Context = context;
     }
 
-    public async Task<List<Filter>> GetAsync() =>
-        await m_FiltersCollection.Find(_ => true).ToListAsync();
+    public async Task<List<Filter>> GetAsync(string userId) =>
+        await m_Context.Filters.Find(f => f.User == userId).ToListAsync();
 
-    public async Task<Filter?> GetAsync(string id) =>
-        await m_FiltersCollection.Find(f => f.Id == id).FirstOrDefaultAsync();
+    public async Task<Filter?> GetAsync(string userId, string id) =>
+        await m_Context.Filters.Find(f => f.Id == id && f.User == userId).FirstOrDefaultAsync();
 
     public async Task AddAsync(Filter filter)
     {
-        await m_FiltersCollection.InsertOneAsync(filter);
+        await m_Context.Filters.InsertOneAsync(filter);
     }
 
     public async Task UpdateAsync(Filter filter)
     {
         var filterDef = Builders<Filter>.Filter.Where(f => f.Id == filter.Id);
-        await m_FiltersCollection.ReplaceOneAsync(filterDef, filter);
+        await m_Context.Filters.ReplaceOneAsync(filterDef, filter);
     }
 
-    public async Task RemoveAsync(string id)
+    public async Task RemoveAsync(string userId, string id)
     {
-        var filter = Builders<Filter>.Filter.Eq(f => f.Id, id);
-        await m_FiltersCollection.DeleteOneAsync(filter);
+        var filter = Builders<Filter>.Filter.Where(f => f.Id == id && f.User == userId);
+        await m_Context.Filters.DeleteOneAsync(filter);
     }
 
-    public async Task<string?> GenerateFilter(string id)
+    public async Task<string?> GenerateFilter(string userId, string id)
     {
-        Filter? filter = await GetAsync(id);
+        Filter? filter = await GetAsync(userId, id);
         if (filter == null)
         {
             return null;
@@ -67,11 +60,11 @@ public class FiltersService
                     }
                     filterStr += $"#Rule {rule.Id}({rule.Name})\n";
                     filterStr += await RuleToRuleString(rule);
-                    filterStr += "\n";
+                    filterStr += "\n\n";
                 }
-                filterStr += "\n";
+                filterStr += "\n\n";
             }
-            filterStr += "\n";
+            filterStr += "\n\n";
         }
         return filterStr;
     }

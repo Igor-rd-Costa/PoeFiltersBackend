@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PoEFiltersBackend.Models;
 using System.Net;
@@ -12,11 +13,13 @@ namespace PoEFiltersBackend.Controllers
     {
         private readonly WikiService m_WikiService;
         private readonly ItemsService m_ItemsService;
+        private readonly UserManager<User> m_UserManager;
 
-        public ItemController(WikiService wikiService, ItemsService itemsService) 
+        public ItemController(WikiService wikiService, ItemsService itemsService, UserManager<User> userManager) 
         { 
             m_WikiService = wikiService;
             m_ItemsService = itemsService;
+            m_UserManager = userManager;
         }
 
         [HttpGet()]
@@ -40,6 +43,11 @@ namespace PoEFiltersBackend.Controllers
         [HttpPatch()]
         public async Task<IActionResult> UpdateItems([FromRoute(Name = "game")] string gameStr)
         {
+            User? user = await m_UserManager.GetUserAsync(User);
+            if (user == null || !user.IsAdmin)
+            {
+                return Unauthorized();
+            }
             gameStr = gameStr.ToLower();
             if (gameStr != "poe1" && gameStr != "poe" && gameStr != "poe2")
             {
@@ -86,6 +94,11 @@ namespace PoEFiltersBackend.Controllers
         [HttpPatch("category")]
         public async Task<IActionResult> UpdateCategory([FromRoute(Name = "game")] string gameStr, [FromBody] ItemCategory category)
         {
+            User? user = await m_UserManager.GetUserAsync(User);
+            if (user == null || !user.IsAdmin)
+            {
+                return Unauthorized();
+            }
             gameStr = gameStr.ToLower();
             if (gameStr != "poe1" && gameStr != "poe" && gameStr != "poe2")
             {
@@ -107,6 +120,11 @@ namespace PoEFiltersBackend.Controllers
         [HttpPatch("category/update")]
         public async Task<IActionResult> UpdateCategories([FromRoute(Name = "game")] string gameStr)
         {
+            User? user = await m_UserManager.GetUserAsync(User);
+            if (user == null || !user.IsAdmin)
+            {
+                return Unauthorized();
+            }
             gameStr = gameStr.ToLower();
             if (gameStr != "poe1" && gameStr != "poe" && gameStr != "poe2")
             {

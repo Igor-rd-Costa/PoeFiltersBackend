@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -11,35 +12,61 @@ namespace PoEFiltersBackend.Controllers
     public class FilterController : ControllerBase
     {
         private readonly FiltersService m_FiltersService;
-        public FilterController(FiltersService filtersService)
+        private readonly SignInManager<User> m_SignInManager;
+        private readonly UserManager<User> m_UserManager;
+
+        public FilterController(FiltersService filtersService, SignInManager<User> signInManager, UserManager<User> userManager)
         {
             m_FiltersService = filtersService;
+            m_SignInManager = signInManager;
+            m_UserManager = userManager;
         }
 
         [HttpGet()]
         public async Task<IActionResult> GetFilters()
         {
-            return Ok(await m_FiltersService.GetAsync());
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
+            var filters = await m_FiltersService.GetAsync(userId);
+            return Ok(filters);
         }
 
         [HttpGet("{id:length(24)}")]
         public async Task<IActionResult> GetFilter([FromRoute] string id)
         {
-            return Ok(await m_FiltersService.GetAsync(id));
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(await m_FiltersService.GetAsync(userId, id));
         }
 
         [HttpGet("generate/{id:length(24)}")]
         public async Task<IActionResult> GenerateFilter([FromRoute] string id)
         {
-            return Ok(await m_FiltersService.GenerateFilter(id));
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
+            return Ok(await m_FiltersService.GenerateFilter(userId, id));
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateFilter([FromBody] CreateFilterInfo info)
         {
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
             Filter filter = new()
             {
-                User = null,
+                User = userId,
                 Name = info.Name,
                 Game = "PoE2",
                 CreatedAt = DateTime.UtcNow,
@@ -52,14 +79,27 @@ namespace PoEFiltersBackend.Controllers
         [HttpPatch()]
         public async Task<IActionResult> SaveFilter([FromBody] FilterInfo filter)
         {
-            await m_FiltersService.UpdateAsync(FilterInfoToFilter(filter));
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
+            var f = FilterInfoToFilter(filter);
+            f.ModifiedAt = DateTime.UtcNow;
+            f.User = userId;
+            await m_FiltersService.UpdateAsync(f);
             return Ok();
         }
 
         [HttpDelete]
         public async Task<IActionResult> DeleteFilter([FromBody] DeleteFilterInfo info)
         {
-            await m_FiltersService.RemoveAsync(info.Id);
+            string? userId = m_UserManager.GetUserId(User);
+            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            {
+                return Unauthorized();
+            }
+            await m_FiltersService.RemoveAsync(userId, info.Id);
             return Ok();
         }
 

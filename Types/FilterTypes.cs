@@ -227,7 +227,7 @@ public class FilterInfo
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
     [JsonPropertyName("user")]
-    public string? User { get; set; } = string.Empty;
+    public string User { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("created_at")]

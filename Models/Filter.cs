@@ -9,7 +9,7 @@ public class Filter
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
     [BsonElement("user")]
-    public string? User { get; set; }
+    public string User { get; set; } = string.Empty;
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
     [BsonElement("game")]
@@ -17,7 +17,9 @@ public class Filter
     [BsonElement("sections")]
     public List<FilterSection> Sections { get; set; } = [];
     [BsonElement("created_at")]
+    [BsonRepresentation(BsonType.DateTime)]
     public DateTime CreatedAt { get; set; }
     [BsonElement("modified_at")]
+    [BsonRepresentation(BsonType.DateTime)]
     public DateTime ModifiedAt { get; set; }
 }
