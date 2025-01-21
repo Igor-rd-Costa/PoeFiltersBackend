@@ -1,12 +1,44 @@
 ﻿
 
 using MongoDB.Bson.Serialization.Attributes;
+using System.Data;
 using System.Drawing;
 using System.Text.Json.Serialization;
+using static System.Collections.Specialized.BitVector32;
+
+public enum FilterRuleItemType
+{
+    RULE, RULE_BLOCK
+}
 
 public interface IPositionable
 {
+    [JsonPropertyName("position")]
     int Position { get; }
+}
+
+public interface IFilterRuleItem
+{
+    [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    public Task<string> ToFilterString(ItemsService itemsService);
+}
+
+public interface IFilterRuleItemInfo : IPositionable
+{
+    [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 }
 
 public class ColorRGBA
@@ -124,11 +156,14 @@ public class FilterRuleStyle
     public DropPlayEffect DropPlayEffect { get; set; } = default!;
 }
 
-public class FilterRule
+[BsonDiscriminator("FilterRule")]
+public class FilterRule : IFilterRuleItem
 {
     [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("imgSrc")]
@@ -141,6 +176,70 @@ public class FilterRule
     public List<string> AllowedCategories { get; set; } = [];
     [JsonPropertyName("style")]
     public FilterRuleStyle Style { get; set; } = default!;
+
+    public async Task<string> ToFilterString(ItemsService itemsService)
+    {
+        if (State == "Disabled")
+        {
+            return "";
+        }
+        string ruleStr = $"#Rule {Id}({Name})\n{State}\n";
+        if (Items.Count > 0)
+        {
+            var itemsTask = itemsService.GetItems(Game.POE2, null, Items);
+            ruleStr += "  BaseType";
+            var items = await itemsTask;
+            for (int i = 0; i < items.Count; i++)
+            {
+                ruleStr += $" \"{items[i].Name}\"";
+            }
+            var style = Style;
+            ruleStr += $"\n  SetFontSize {Math.Clamp(style.FontSize, 1, 45)}";
+            ruleStr += $"\n  SetTextColor {style.TextColor}";
+            ruleStr += $"\n  SetBorderColor {style.BorderColor}";
+            ruleStr += $"\n  SetBackgroundColor {style.BackgroundColor}";
+            if (style.DropSound.Positional)
+            {
+                ruleStr += $"\n  PlayAlertSoundPositional {style.DropSound}";
+            }
+            else
+            {
+                ruleStr += $"\n  PlayAlertSound {style.DropSound}";
+            }
+            ruleStr += $"\n  PlayEffect {style.DropPlayEffect}";
+            ruleStr += $"\n  MinimapIcon {style.DropIcon}";
+
+            ruleStr += "\n\n";
+        }
+        return ruleStr;
+    }
+}
+
+[BsonDiscriminator("FilterRuleBlock")]
+public class FilterRuleBlock : IFilterRuleItem
+{
+    [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("rules")]
+    public List<FilterRule> Rules { get; set; } = [];
+    [JsonPropertyName("allowUserCreatedRules")]
+    public bool AllowUserCreatedRules { get; set; }
+
+    public async Task<string> ToFilterString(ItemsService itemsService)
+    {
+        string ruleBlockStr = $"#\n#RuleBlock {Id}({Name})\n#\n\n";
+        for (int i = 0; i < Rules.Count; i++)
+        {
+            ruleBlockStr += await Rules[i].ToFilterString(itemsService);
+        }
+        ruleBlockStr += $"#\n#EndRuleBlock {Id}({Name})\n#\n\n";
+        return ruleBlockStr;
+    }
 }
 
 public class FilterBlock
@@ -155,7 +254,18 @@ public class FilterBlock
     [JsonPropertyName("allowedCategories")]
     public List<string> AllowedCategories { get; set; } = [];
     [JsonPropertyName("rules")]
-    public List<FilterRule> Rules { get; set; } = [];
+    public List<IFilterRuleItem> Rules { get; set; } = [];
+
+    public async Task<string> ToFilterString(ItemsService itemsService)
+    {
+        string blockStr = $"#\n#Block {Id}({Name})\n#\n\n";
+        for (int i = 0; i < Rules.Count; i++)
+        {
+            blockStr += await Rules[i].ToFilterString(itemsService);
+        }
+        blockStr += $"#\n#EndBlock {Id}({Name})\n#\n\n";
+        return blockStr;
+    }
 }
 
 public class FilterSection
@@ -167,13 +277,26 @@ public class FilterSection
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("blocks")]
     public List<FilterBlock> Blocks { get; set; } = [];
+    public async Task<string> ToFilterString(ItemsService itemsService)
+    {
+        string sectionStr = $"#\n#Section {Id}({Name})\n#\n\n";
+        for (int i = 0; i < Blocks.Count; i++)
+        {
+            sectionStr += await Blocks[i].ToFilterString(itemsService);
+        }
+        sectionStr += $"#\n#EndSection {Id}({Name})\n#\n\n";
+        return sectionStr;
+    }
 }
 
-public class FilterRuleInfo : IPositionable
+[BsonDiscriminator("FilterRuleInfo")]
+public class FilterRuleInfo : IFilterRuleItemInfo
 {
     [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("imgSrc")]
@@ -188,6 +311,24 @@ public class FilterRuleInfo : IPositionable
     public List<string> AllowedCategories { get; set; } = [];
     [JsonPropertyName("style")]
     public FilterRuleStyle Style { get; set; } = default!;
+}
+
+[BsonDiscriminator("FilterRuleBlockInfo")]
+public class FilterRuleBlockInfo : IFilterRuleItemInfo
+{
+    [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("rules")]
+    public List<FilterRuleInfo> Rules { get; set; } = [];
+    [JsonPropertyName("allowUserCreatedRules")]
+    public bool AllowUserCreatedRules { get; set; }
+    [JsonPropertyName("position")]
+    public int Position { get; set; }
 }
 
 
@@ -205,7 +346,7 @@ public class FilterBlockInfo : IPositionable
     [JsonPropertyName("allowedCategories")]
     public List<string> AllowedCategories { get; set; } = [];
     [JsonPropertyName("rules")]
-    public List<FilterRuleInfo> Rules { get; set; } = [];
+    public List<IFilterRuleItemInfo> Rules { get; set; } = [];
 
 }
 

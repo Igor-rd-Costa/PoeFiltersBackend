@@ -1,13 +1,20 @@
 using Microsoft.AspNetCore.Identity;
+using MongoDB.Bson.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(o => {
+    o.JsonSerializerOptions.Converters.Add(new FilterRuleItemInfoConverter());
+    o.JsonSerializerOptions.Converters.Add(new FilterRuleItemConverter());
+});
 
 builder.Services.Configure<AuthConfig>(
     builder.Configuration.GetSection("Auth"));
+
+BsonSerializer.RegisterSerializer<IFilterRuleItem>(new FilterRuleItemSerializer());
+BsonSerializer.RegisterSerializer<IFilterRuleItemInfo>(new FilterRuleItemInfoSerializer());
 
 builder.Services.AddCors(c =>
 {

@@ -1,6 +1,6 @@
 # PoEFiltersBackend
 
-Backend for PoEFilters. 
+Backend for PoEFilters.
 PoEFilters is a web app that allows the creation of .filter files for the game Path of Exile 2.
 Made with .NET 8.
 

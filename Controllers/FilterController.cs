@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
+using System.IO;
 
 
 namespace PoEFiltersBackend.Controllers
@@ -103,6 +104,80 @@ namespace PoEFiltersBackend.Controllers
             return Ok();
         }
 
+        private FilterRule FilterRuleInfoToFilterRule(FilterRuleInfo ruleInfo)
+        {
+            return new FilterRule()
+            {
+                Id = ruleInfo.Id,
+                Type = FilterRuleItemType.RULE,
+                Name = ruleInfo.Name,
+                ImgSrc = ruleInfo.ImgSrc,
+                State = ruleInfo.State,
+                Style = ruleInfo.Style,
+                Items = ruleInfo.Items,
+                AllowedCategories = ruleInfo.AllowedCategories,
+            };
+        }
+
+        private FilterRuleBlock FilterRuleBlockInfoToFilterRuleBlock(FilterRuleBlockInfo ruleBlockInfo)
+        {
+            var ruleBlock = new FilterRuleBlock()
+            {
+                Id = ruleBlockInfo.Id,
+                Type = FilterRuleItemType.RULE_BLOCK,
+                Name = ruleBlockInfo.Name,
+                AllowUserCreatedRules = ruleBlockInfo.AllowUserCreatedRules,
+                Rules = []
+            };
+            ruleBlockInfo.Rules.Sort(ItemPositionSortFn);
+            for (int i = 0; i < ruleBlockInfo.Rules.Count; i++)
+            {
+                ruleBlock.Rules.Add(FilterRuleInfoToFilterRule(ruleBlockInfo.Rules[i]));
+            }
+            return ruleBlock;
+        }
+
+        private IFilterRuleItem IFilterRuleItemInfoToIFilterRuleItem(IFilterRuleItemInfo ruleItemInfo)
+        {
+            return (ruleItemInfo.Type == FilterRuleItemType.RULE)
+                ? FilterRuleInfoToFilterRule((FilterRuleInfo)ruleItemInfo)
+                : FilterRuleBlockInfoToFilterRuleBlock((FilterRuleBlockInfo)ruleItemInfo);
+        }
+
+        private FilterBlock FilterBlockInfoToFilterBlock(FilterBlockInfo blockInfo)
+        {
+            FilterBlock block = new FilterBlock()
+            {
+                Id = blockInfo.Id,
+                Name = blockInfo.Name,
+                ImgSrc = blockInfo.ImgSrc,
+                AllowedCategories = blockInfo.AllowedCategories,
+                Rules = []
+            };
+            blockInfo.Rules.Sort(ItemPositionSortFn);
+            for (int i = 0; i < blockInfo.Rules.Count; ++i)
+            {
+                block.Rules.Add(IFilterRuleItemInfoToIFilterRuleItem(blockInfo.Rules[i]));
+            }
+            return block;
+        }
+
+        private FilterSection FilterSectionInfoToFilterSection(FilterSectionInfo sectionInfo)
+        {
+            FilterSection section = new FilterSection()
+            {
+                Id = sectionInfo.Id,
+                Name = sectionInfo.Name,
+                Blocks = []
+            };
+            sectionInfo.Blocks.Sort(ItemPositionSortFn);
+            for (int i = 0; i < sectionInfo.Blocks.Count; i++)
+            {
+                section.Blocks.Add(FilterBlockInfoToFilterBlock(sectionInfo.Blocks[i]));
+            }
+            return section;
+        }
+
         private Filter FilterInfoToFilter(FilterInfo filterInfo)
         {
             Filter filter = new Filter()
@@ -118,44 +193,11 @@ namespace PoEFiltersBackend.Controllers
             filterInfo.Sections.Sort(ItemPositionSortFn);
             for (int i = 0; i < filterInfo.Sections.Count; i++)
             {
-                var section = filterInfo.Sections[i];
-                filter.Sections.Add(new FilterSection()
-                {
-                    Id = section.Id,
-                    Name = section.Name,
-                    Blocks = []
-                });
-                section.Blocks.Sort(ItemPositionSortFn);
-                for (int j = 0; j < section.Blocks.Count; j++)
-                {
-                    var block = section.Blocks[j];
-                    filter.Sections[i].Blocks.Add(new FilterBlock()
-                    {
-                        Id = block.Id,
-                        Name = block.Name,
-                        ImgSrc = block.ImgSrc,
-                        AllowedCategories = block.AllowedCategories,
-                        Rules = []
-                    });
-                    block.Rules.Sort(ItemPositionSortFn);
-                    for (int k = 0; k < block.Rules.Count; k++)
-                    {
-                        var rule = block.Rules[k];
-                        filter.Sections[i].Blocks[j].Rules.Add(new FilterRule()
-                        {
-                            Id = rule.Id,
-                            Name = rule.Name,
-                            ImgSrc = rule.ImgSrc,
-                            State = rule.State,
-                            AllowedCategories = rule.AllowedCategories,
-                            Items = rule.Items,
-                            Style = rule.Style
-                        });
-                    }
-                }
+                filter.Sections.Add(FilterSectionInfoToFilterSection(filterInfo.Sections[i]));
             }
             return filter;
         }
+
 
         private int ItemPositionSortFn<T>(T a, T b) where T : IPositionable
         {

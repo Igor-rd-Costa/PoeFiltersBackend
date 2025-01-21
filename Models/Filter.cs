@@ -22,4 +22,14 @@ public class Filter
     [BsonElement("modified_at")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime ModifiedAt { get; set; }
+
+    public async Task<string> ToFilterString(ItemsService itemsService)
+    {
+        string filterStr = "";
+        for (int i = 0; i < Sections.Count; i++)
+        {
+            filterStr += await Sections[i].ToFilterString(itemsService);
+        }
+        return filterStr;
+    }
 }
