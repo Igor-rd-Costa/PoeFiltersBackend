@@ -58,7 +58,7 @@ public class ColorRGBA
     {
         if (Active)
         {
-            return $"{R} {G} {B} {A * 255}";
+            return $"{R} {G} {B} {Math.Round(A * 255)}";
         }
         return "0 0 0 0";
     }
@@ -110,7 +110,7 @@ public class DropIcon
         {
             return $"{Size} {Color} {Shape}";
         }
-        return "None";
+        return "-1";
     }
 }
 
@@ -127,11 +127,30 @@ public class DropSound
 
     public override string ToString()
     {
-        if (Active)
+        if (Active && Sound > 0 && Sound < 27)
         {
-            return $"{Sound} {Volume}";
+            string soundStr = Sound <= 16 ? Sound.ToString() : GetShaperSoundStr();
+            return $"{soundStr} {Volume}";
         }
         return "None";
+    }
+
+    private string GetShaperSoundStr()
+    {
+        return Sound switch
+        {
+            17 => "ShAlchemy",
+            18 => "ShBlessed",
+            19 => "ShChaos",
+            20 => "ShDivine",
+            21 => "ShExalted",
+            22 => "ShFusing",
+            23 => "ShGeneral",
+            24 => "ShMirror",
+            25 => "ShRegal",
+            26 => "ShVaal",
+            _ => "None"
+        };
     }
 }
 
