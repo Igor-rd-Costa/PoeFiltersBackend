@@ -252,7 +252,7 @@ public class FilterRuleBlock : IFilterRuleItem
     public async Task<string> ToFilterString(ItemsService itemsService)
     {
         string ruleBlockStr = $"#\n#RuleBlock {Id}({Name})\n#\n\n";
-        for (int i = 0; i < Rules.Count; i++)
+        for (int i = (Rules.Count - 1); i >= 0; i--)
         {
             ruleBlockStr += await Rules[i].ToFilterString(itemsService);
         }
@@ -278,7 +278,7 @@ public class FilterBlock
     public async Task<string> ToFilterString(ItemsService itemsService)
     {
         string blockStr = $"#\n#Block {Id}({Name})\n#\n\n";
-        for (int i = 0; i < Rules.Count; i++)
+        for (int i = (Rules.Count - 1); i >= 0; i--)
         {
             blockStr += await Rules[i].ToFilterString(itemsService);
         }
@@ -299,7 +299,7 @@ public class FilterSection
     public async Task<string> ToFilterString(ItemsService itemsService)
     {
         string sectionStr = $"#\n#Section {Id}({Name})\n#\n\n";
-        for (int i = 0; i < Blocks.Count; i++)
+        for (int i = (Blocks.Count - 1); i >= 0; i--)
         {
             sectionStr += await Blocks[i].ToFilterString(itemsService);
         }

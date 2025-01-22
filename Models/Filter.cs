@@ -26,7 +26,7 @@ public class Filter
     public async Task<string> ToFilterString(ItemsService itemsService)
     {
         string filterStr = "";
-        for (int i = 0; i < Sections.Count; i++)
+        for (int i = (Sections.Count - 1); i >= 0; i--)
         {
             filterStr += await Sections[i].ToFilterString(itemsService);
         }
