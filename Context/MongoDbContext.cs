@@ -15,6 +15,8 @@ public class MongoDbContext
     public IMongoCollection<User> Users => m_Database.GetCollection<User>("Users");
     public IMongoCollection<Item> PoEItems => m_Database.GetCollection<Item>("PoEItems");
     public IMongoCollection<Item> PoE2Items => m_Database.GetCollection<Item>("PoE2Items");
+    public IMongoCollection<ItemCategory> PoEBaseItemCategories => m_Database.GetCollection<ItemCategory>("PoEBaseItemCategories");
+    public IMongoCollection<ItemCategory> PoE2BaseItemCategories => m_Database.GetCollection<ItemCategory>("PoE2BaseItemCategories");
     public IMongoCollection<ItemCategory> PoEItemCategories => m_Database.GetCollection<ItemCategory>("PoEItemCategories");
     public IMongoCollection<ItemCategory> PoE2ItemCategories => m_Database.GetCollection<ItemCategory>("PoE2ItemCategories");
     public IMongoCollection<ProviderToken> UserTokens => m_Database.GetCollection<ProviderToken>("UserTokens");

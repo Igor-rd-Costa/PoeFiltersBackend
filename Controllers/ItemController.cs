@@ -14,12 +14,14 @@ namespace PoEFiltersBackend.Controllers
         private readonly WikiService m_WikiService;
         private readonly ItemsService m_ItemsService;
         private readonly UserManager<User> m_UserManager;
+        private readonly SignInManager<User> m_SignInManager;
 
-        public ItemController(WikiService wikiService, ItemsService itemsService, UserManager<User> userManager) 
+        public ItemController(WikiService wikiService, ItemsService itemsService, UserManager<User> userManager, SignInManager<User> signInManager) 
         { 
             m_WikiService = wikiService;
             m_ItemsService = itemsService;
             m_UserManager = userManager;
+            m_SignInManager = signInManager;
         }
 
         [HttpGet()]
@@ -60,39 +62,32 @@ namespace PoEFiltersBackend.Controllers
             }
             var items = await m_WikiService.GetItems();
             await m_ItemsService.DeleteAllItems(game);
-            for (int i = 0; i < items.Count; i++)
+            var newItems = items.Select(i =>
             {
-                string categoryId = await m_ItemsService.GetCategoryId(game, items[i].Category) ?? ""; 
-                items[i].Category = categoryId; 
-            }
-            var newItems = items.Where(i => i.Category != "").Select(i => new Item()
-            {
-                Name = i.Name,
-                Category = i.Category,
+                return new Item()
+                {
+                    Name = i.Name,
+                    BaseCategory = i.Category,
+                    Rarity = i.Rarity
+                };
             }).ToList();
+            for (int i = 0; i < newItems.Count; i++)
+            {
+                string? categoryId = await m_ItemsService.GetBaseCategoryId(game, newItems[i].BaseCategory);
+                if (categoryId == null)
+                {
+                    categoryId = await m_ItemsService.AddBaseCategory(game, 
+                        new ItemCategory() { Name = newItems[i].BaseCategory }
+                    );
+                }
+                newItems[i].BaseCategory = categoryId;
+            }
             await m_ItemsService.AddItems(game, newItems);
             return Ok();
         }
 
-        [HttpGet("category")]
-        public async Task<IActionResult> GetCategories([FromRoute(Name = "game")] string gameStr, [FromQuery] bool includeIgnored = true)
-        {
-            gameStr = gameStr.ToLower();
-            if (gameStr != "poe1" && gameStr != "poe" && gameStr != "poe2")
-            {
-                return BadRequest($"Invalid route parameter game -> {gameStr}");
-            }
-            Game game = Game.POE1;
-            if (gameStr == "poe2")
-            {
-                game = Game.POE2;
-            }
-            var categories = await m_ItemsService.GetCategories(game, includeIgnored);
-            return Ok(categories);
-        }
-
-        [HttpPatch("category")]
-        public async Task<IActionResult> UpdateCategory([FromRoute(Name = "game")] string gameStr, [FromBody] ItemCategory category)
+        [HttpPatch("categories")]
+        public async Task<IActionResult> AddItemCategory([FromRoute(Name = "game")] string gameStr, [FromBody] AddItemCategoryInfo info)
         {
             User? user = await m_UserManager.GetUserAsync(User);
             if (user == null || !user.IsAdmin)
@@ -109,53 +104,11 @@ namespace PoEFiltersBackend.Controllers
             {
                 game = Game.POE2;
             }
-            if (game == Game.POE1)
+            if (!(await m_ItemsService.AddItemCategoryToItem(game, info.Id, info.CategoryId)))
             {
-                return StatusCode(501);
+                return BadRequest();
             }
-            await m_ItemsService.UpdateCategory(game, category);
             return Ok();
-        }
-
-        [HttpPatch("category/update")]
-        public async Task<IActionResult> UpdateCategories([FromRoute(Name = "game")] string gameStr)
-        {
-            User? user = await m_UserManager.GetUserAsync(User);
-            if (user == null || !user.IsAdmin)
-            {
-                return Unauthorized();
-            }
-            gameStr = gameStr.ToLower();
-            if (gameStr != "poe1" && gameStr != "poe" && gameStr != "poe2")
-            {
-                return BadRequest($"Invalid route parameter game -> {gameStr}");
-            }
-            Game game = Game.POE1;
-            if (gameStr == "poe2")
-            {
-                game = Game.POE2;
-            }
-            if (game == Game.POE1)
-            {
-                return StatusCode(501);
-            }
-            var categories = await m_WikiService.GetCategories();
-            var dbCategories = await m_ItemsService.GetCategories(game);
-            foreach (ItemCategory category in dbCategories)
-            {
-                categories.Remove(category.Name);
-            }
-            List<ItemCategory> newCategories = categories.Select(c => new ItemCategory()
-            {
-                Name = c,
-                IgnoreItems = false,
-            }).ToList();
-            if (newCategories.Count > 0)
-            {
-                await m_ItemsService.AddCategories(game, newCategories);
-                dbCategories.AddRange(newCategories);
-            }
-            return Ok(dbCategories);
         }
     }
 }

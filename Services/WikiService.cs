@@ -35,6 +35,8 @@ public class ItemCargoQueryObject
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("class id")]
     public string Category { get; set; } = string.Empty;
+    [JsonPropertyName("rarity")]
+    public string Rarity { get; set; } = string.Empty;
 }
 
 public class CountCargoQueryObject
@@ -57,18 +59,7 @@ public class WikiService
     public async Task<List<ItemCargoQueryObject>> GetItems()
     {
         int limit = 500;
-        List<ItemCategory> ignoredCategories = await m_ItemsService.GetIgnoredCategories(Game.POE2);
-        string whereClause = "where=";
-        for (int i = 0; i < ignoredCategories.Count; i++)
-        {
-            ItemCategory category = ignoredCategories[i];
-            whereClause += $"class_id!=\"{category.Name}\"";
-            if (i < (ignoredCategories.Count - 1))
-            {
-                whereClause += " OR ";
-            }
-        }
-        string query = m_APIEndpoint + $"&tables=items&fields=COUNT(*)=count&{whereClause}";
+        string query = m_APIEndpoint + "&tables=items&fields=COUNT(*)=count";
         int maxCount = (await (await m_Http.GetAsync(query))
             .Content.ReadFromJsonAsync<CargoQueryResponse<CountCargoQueryObject>>())?.CargoQuery[0].Title.Count ?? 0;
         int offset = 0;
@@ -77,7 +68,7 @@ public class WikiService
         List<ItemCargoQueryObject> queryItems = [];
         while (offset < maxCount)
         {
-            var result = await m_Http.GetAsync(m_APIEndpoint + $"&tables=items&fields=name,class_id&limit={limit}&offset={offset}&{whereClause}");
+            var result = await m_Http.GetAsync(m_APIEndpoint + $"&tables=items&fields=name,class_id,rarity&limit={limit}&offset={offset}");
             if (result == null || result.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 return items;

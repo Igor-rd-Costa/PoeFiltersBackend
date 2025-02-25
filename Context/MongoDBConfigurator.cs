@@ -49,7 +49,7 @@ public class FilterRuleItemInfoSerializer : IBsonSerializer<IFilterRuleItemInfo>
     public IFilterRuleItemInfo Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
         var document = BsonSerializer.Deserialize<BsonDocument>(context.Reader);
-        var discriminator = document["_t"].AsString;
+        var discriminator = document["Type"].AsString;
 
         return discriminator switch
         {
@@ -72,7 +72,7 @@ public class FilterRuleItemInfoSerializer : IBsonSerializer<IFilterRuleItemInfo>
     object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
         var document = BsonSerializer.Deserialize<BsonDocument>(context.Reader);
-        var discriminator = document["_t"].AsString;
+        var discriminator = document["Type"].AsString;
 
         return discriminator switch
         {
