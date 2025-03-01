@@ -78,17 +78,16 @@ namespace PoEFiltersBackend.Controllers
         }
 
         [HttpPatch()]
-        public async Task<IActionResult> SaveFilter([FromBody] FilterInfo filter)
+        public async Task<IActionResult> SaveFilter([FromBody] Filter filter)
         {
             string? userId = m_UserManager.GetUserId(User);
-            if (!m_SignInManager.IsSignedIn(User) || userId == null)
+            if (userId == null || filter.User != userId)
             {
                 return Unauthorized();
             }
-            var f = FilterInfoToFilter(filter);
-            f.ModifiedAt = DateTime.UtcNow;
-            f.User = userId;
-            await m_FiltersService.UpdateAsync(f);
+            filter.ModifiedAt = DateTime.UtcNow;
+            filter.User = userId;
+            await m_FiltersService.UpdateAsync(filter);
             return Ok();
         }
 
@@ -102,111 +101,6 @@ namespace PoEFiltersBackend.Controllers
             }
             await m_FiltersService.RemoveAsync(userId, info.Id);
             return Ok();
-        }
-
-        private FilterRule FilterRuleInfoToFilterRule(FilterRuleInfo ruleInfo)
-        {
-            return new FilterRule()
-            {
-                Id = ruleInfo.Id,
-                Type = FilterRuleItemType.RULE,
-                Name = ruleInfo.Name,
-                ImgSrc = ruleInfo.ImgSrc,
-                State = ruleInfo.State,
-                Style = ruleInfo.Style,
-                Items = ruleInfo.Items,
-                AllowedCategories = ruleInfo.AllowedCategories,
-            };
-        }
-
-        private FilterRuleBlock FilterRuleBlockInfoToFilterRuleBlock(FilterRuleBlockInfo ruleBlockInfo)
-        {
-            var ruleBlock = new FilterRuleBlock()
-            {
-                Id = ruleBlockInfo.Id,
-                Type = FilterRuleItemType.RULE_BLOCK,
-                Name = ruleBlockInfo.Name,
-                AllowUserCreatedRules = ruleBlockInfo.AllowUserCreatedRules,
-                Rules = []
-            };
-            ruleBlockInfo.Rules.Sort(ItemPositionSortFn);
-            for (int i = 0; i < ruleBlockInfo.Rules.Count; i++)
-            {
-                ruleBlock.Rules.Add(FilterRuleInfoToFilterRule(ruleBlockInfo.Rules[i]));
-            }
-            return ruleBlock;
-        }
-
-        private IFilterRuleItem IFilterRuleItemInfoToIFilterRuleItem(IFilterRuleItemInfo ruleItemInfo)
-        {
-            return (ruleItemInfo.Type == FilterRuleItemType.RULE)
-                ? FilterRuleInfoToFilterRule((FilterRuleInfo)ruleItemInfo)
-                : FilterRuleBlockInfoToFilterRuleBlock((FilterRuleBlockInfo)ruleItemInfo);
-        }
-
-        private FilterBlock FilterBlockInfoToFilterBlock(FilterBlockInfo blockInfo)
-        {
-            FilterBlock block = new FilterBlock()
-            {
-                Id = blockInfo.Id,
-                Name = blockInfo.Name,
-                ImgSrc = blockInfo.ImgSrc,
-                AllowedCategories = blockInfo.AllowedCategories,
-                RulesType = blockInfo.RulesType,
-                Rules = []
-            };
-            blockInfo.Rules.Sort(ItemPositionSortFn);
-            for (int i = 0; i < blockInfo.Rules.Count; ++i)
-            {
-                block.Rules.Add(IFilterRuleItemInfoToIFilterRuleItem(blockInfo.Rules[i]));
-            }
-            return block;
-        }
-
-        private FilterSection FilterSectionInfoToFilterSection(FilterSectionInfo sectionInfo)
-        {
-            FilterSection section = new FilterSection()
-            {
-                Id = sectionInfo.Id,
-                Name = sectionInfo.Name,
-                Blocks = []
-            };
-            sectionInfo.Blocks.Sort(ItemPositionSortFn);
-            for (int i = 0; i < sectionInfo.Blocks.Count; i++)
-            {
-                section.Blocks.Add(FilterBlockInfoToFilterBlock(sectionInfo.Blocks[i]));
-            }
-            return section;
-        }
-
-        private Filter FilterInfoToFilter(FilterInfo filterInfo)
-        {
-            Filter filter = new Filter()
-            {
-                Id = filterInfo.Id,
-                User = filterInfo.User,
-                Name = filterInfo.Name,
-                CreatedAt = filterInfo.CreatedAt,
-                ModifiedAt = filterInfo.ModifiedAt,
-                Game = filterInfo.Game,
-                Sections = []
-            };
-            filterInfo.Sections.Sort(ItemPositionSortFn);
-            for (int i = 0; i < filterInfo.Sections.Count; i++)
-            {
-                filter.Sections.Add(FilterSectionInfoToFilterSection(filterInfo.Sections[i]));
-            }
-            return filter;
-        }
-
-
-        private int ItemPositionSortFn<T>(T a, T b) where T : IPositionable
-        {
-            if (a.Position > b.Position)
-            {
-                return 1;
-            }
-            return -1;
         }
     }
 }

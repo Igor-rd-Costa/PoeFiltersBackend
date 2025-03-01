@@ -25,7 +25,7 @@ public class FiltersService
 
     public async Task UpdateAsync(Filter filter)
     {
-        var filterDef = Builders<Filter>.Filter.Where(f => f.Id == filter.Id);
+        var filterDef = Builders<Filter>.Filter.Where(f => f.Id == filter.Id && f.User == filter.User);
         await m_Context.Filters.ReplaceOneAsync(filterDef, filter);
     }
         
