@@ -152,6 +152,7 @@ namespace PoEFiltersBackend.Controllers
                 Name = blockInfo.Name,
                 ImgSrc = blockInfo.ImgSrc,
                 AllowedCategories = blockInfo.AllowedCategories,
+                RulesType = blockInfo.RulesType,
                 Rules = []
             };
             blockInfo.Rules.Sort(ItemPositionSortFn);

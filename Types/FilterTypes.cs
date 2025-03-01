@@ -11,6 +11,11 @@ public enum FilterRuleItemType
     RULE, RULE_BLOCK
 }
 
+public enum FilterBlockRuleType
+{
+    RULE_MINIMAL, RULE_FULL
+}
+
 public interface IPositionable
 {
     [JsonPropertyName("position")]
@@ -272,6 +277,8 @@ public class FilterBlock
     public string ImgSrc { get; set; } = string.Empty;
     [JsonPropertyName("allowedCategories")]
     public List<string> AllowedCategories { get; set; } = [];
+    [JsonPropertyName("rulesType")]
+    public FilterBlockRuleType RulesType { get; set; } = FilterBlockRuleType.RULE_FULL;
     [JsonPropertyName("rules")]
     public List<IFilterRuleItem> Rules { get; set; } = [];
 
@@ -364,6 +371,8 @@ public class FilterBlockInfo : IPositionable
     public int Position { get; set; }
     [JsonPropertyName("allowedCategories")]
     public List<string> AllowedCategories { get; set; } = [];
+    [JsonPropertyName("rulesType")]
+    public FilterBlockRuleType RulesType { get; set; } = FilterBlockRuleType.RULE_FULL;
     [JsonPropertyName("rules")]
     public List<IFilterRuleItemInfo> Rules { get; set; } = [];
 
