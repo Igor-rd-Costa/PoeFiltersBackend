@@ -43,7 +43,12 @@ namespace PoEFiltersBackend.Controllers
             {
                 return Unauthorized();
             }
-            return Ok(await m_FiltersService.GetAsync(userId, id));
+            Filter? filter = await m_FiltersService.GetAsync(userId, id);
+            if (filter == null)
+            {
+                return NotFound();
+            }
+            return Ok(filter);
         }
 
         [HttpGet("generate/{id:length(24)}")]

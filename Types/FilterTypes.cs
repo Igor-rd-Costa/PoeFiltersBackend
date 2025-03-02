@@ -11,7 +11,7 @@ public enum FilterRuleItemType
     RULE, RULE_BLOCK
 }
 
-public enum FilterBlockRuleType
+public enum FilterRuleType
 {
     RULE_MINIMAL, RULE_FULL
 }
@@ -40,10 +40,10 @@ public interface IFilterRuleItemInfo : IPositionable
     [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
-    [JsonPropertyName("type")]
-    public FilterRuleItemType Type { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; }
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
 }
 
 public class ColorRGBA
@@ -245,10 +245,12 @@ public class FilterRuleBlock : IFilterRuleItem
     [BsonGuidRepresentation(MongoDB.Bson.GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
-    [JsonPropertyName("type")]
-    public FilterRuleItemType Type { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("type")]
+    public FilterRuleItemType Type { get; set; }
+    [JsonPropertyName("rulesType")]
+    public FilterRuleType RulesType { get; set; } = FilterRuleType.RULE_FULL;
     [JsonPropertyName("rules")]
     public List<FilterRule> Rules { get; set; } = [];
     [JsonPropertyName("allowUserCreatedRules")]
@@ -278,7 +280,7 @@ public class FilterBlock
     [JsonPropertyName("allowedCategories")]
     public List<string> AllowedCategories { get; set; } = [];
     [JsonPropertyName("rulesType")]
-    public FilterBlockRuleType RulesType { get; set; } = FilterBlockRuleType.RULE_FULL;
+    public FilterRuleType RulesType { get; set; } = FilterRuleType.RULE_FULL;
     [JsonPropertyName("rules")]
     public List<IFilterRuleItem> Rules { get; set; } = [];
 
