@@ -60,9 +60,7 @@ namespace PoEFiltersBackend.Controllers
             {
                 game = Game.POE2;
             }
-            var items = await m_WikiService.GetItems();
-            await m_ItemsService.DeleteAllItems(game);
-            var newItems = items.Select(i =>
+            var newItems = (await m_WikiService.GetItems()).Select(i =>
             {
                 return new Item()
                 {
@@ -71,19 +69,70 @@ namespace PoEFiltersBackend.Controllers
                     Rarity = i.Rarity
                 };
             }).ToList();
-            for (int i = 0; i < newItems.Count; i++)
+            var oldItems = await m_ItemsService.GetItems(game);
+
+            List<Item> addItems = [];
+            List<string> removeItems = [];
+            for (int i = 0; i < newItems.Count(); i++)
             {
-                string? categoryId = await m_ItemsService.GetBaseCategoryId(game, newItems[i].BaseCategory);
-                if (categoryId == null)
+                Item newItem = newItems[i];
+                bool found = false;
+                for (int j = 0; j < oldItems.Count(); j++)
                 {
-                    categoryId = await m_ItemsService.AddBaseCategory(game, 
-                        new ItemCategory() { Name = newItems[i].BaseCategory }
-                    );
+                    Item oldItem = oldItems[j];
+                    if (newItem.Name.Equals(oldItem.Name))
+                    {
+                        found = true;
+                        break;
+                    }
                 }
-                newItems[i].BaseCategory = categoryId;
+                if (!found)
+                {
+                    addItems.Add(newItem);
+                }
             }
-            await m_ItemsService.AddItems(game, newItems);
-            return Ok();
+            for (int i = 0; i < oldItems.Count(); i++)
+            {
+                Item oldItem = oldItems[i];
+                bool found = false;
+                for (int j = 0; j < newItems.Count(); j++)
+                {
+                    Item newItem = newItems[j];
+                    if (newItem.Name.Equals(oldItem.Name))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    removeItems.Add(oldItem.Id);
+                    oldItems.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            if (removeItems.Count > 0)
+            {
+                await m_ItemsService.DeleteItems(game, removeItems);
+            }
+            if (addItems.Count > 0)
+            {
+                for (int i = 0; i < addItems.Count; i++)
+                {
+                    string? categoryId = await m_ItemsService.GetBaseCategoryId(game, addItems[i].BaseCategory);
+                    if (categoryId == null)
+                    {
+                        categoryId = await m_ItemsService.AddBaseCategory(game, 
+                            new ItemCategory() { Name = newItems[i].BaseCategory }
+                        );
+                    }
+                    newItems[i].BaseCategory = categoryId;
+                }
+                await m_ItemsService.AddItems(game, addItems);
+                oldItems.AddRange(addItems);
+            }
+            return Ok(oldItems);
         }
 
         [HttpPatch("categories")]

@@ -68,7 +68,7 @@ public class WikiService
         List<ItemCargoQueryObject> queryItems = [];
         while (offset < maxCount)
         {
-            var result = await m_Http.GetAsync(m_APIEndpoint + $"&tables=items&fields=name,class_id,rarity&limit={limit}&offset={offset}");
+            var result = await m_Http.GetAsync(m_APIEndpoint + $"&tables=items&fields=name,class_id,rarity&limit={limit}&offset={offset}&group_by=name");
             if (result == null || result.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 return items;

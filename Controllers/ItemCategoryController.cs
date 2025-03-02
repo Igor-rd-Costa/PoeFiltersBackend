@@ -131,22 +131,56 @@ namespace PoEFiltersBackend.Controllers
             {
                 return StatusCode(501);
             }
-            var categories = await m_WikiService.GetCategories();
-            var dbCategories = await m_ItemsService.GetBaseItemCategories(game);
-            foreach (ItemCategory category in dbCategories)
+            var newCategories = await m_WikiService.GetCategories();
+            var oldCategories = await m_ItemsService.GetBaseItemCategories(game);
+            List<ItemCategory> addCategories = [];
+            List<string> removeCategories = [];
+            for (int i = 0; i < newCategories.Count; i++)
             {
-                categories.Remove(category.Name);
+                string newCategoryName = newCategories[i];
+                bool found = false;
+                for (int j = 0; j < oldCategories.Count; j++)
+                {
+                    if (newCategoryName.Equals(oldCategories[j].Name))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    addCategories.Add(new ItemCategory() { Name = newCategoryName });
+                }
             }
-            List<ItemCategory> newCategories = categories.Select(c => new ItemCategory()
+            for (int i = 0; i < oldCategories.Count; i++)
             {
-                Name = c,
-            }).ToList();
-            if (newCategories.Count > 0)
-            {
-                await m_ItemsService.AddBaseCategories(game, newCategories);
-                dbCategories.AddRange(newCategories);
+                ItemCategory oldCategory = oldCategories[i];
+                bool found = false;
+                for (int j = 0; j < newCategories.Count; j++)
+                {
+                    if (oldCategory.Name.Equals(newCategories[j]))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    removeCategories.Add(oldCategory.Id);
+                    oldCategories.RemoveAt(i);
+                    i--;
+                }
             }
-            return Ok(dbCategories);
+            if (removeCategories.Count > 0)
+            {
+                await m_ItemsService.DeleteBaseCategories(game, removeCategories);
+            }
+            if (addCategories.Count > 0)
+            {
+                await m_ItemsService.AddBaseCategories(game, addCategories);
+                oldCategories.AddRange(addCategories);
+            }
+            return Ok(oldCategories);
         }
     }
 }

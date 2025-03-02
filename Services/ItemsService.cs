@@ -35,10 +35,10 @@ public class ItemsService
         await collection.InsertManyAsync(items);
     }
 
-    public async Task DeleteAllItems(Game game)
+    public async Task DeleteItems(Game game, List<string>? ids)
     {
         var collection = game == Game.POE1 ? m_Context.PoEItems : m_Context.PoE2Items;
-        var filter = Builders<Item>.Filter.Where(i => true);
+        var filter = Builders<Item>.Filter.Where(i => ids == null ? true : ids.Contains(i.Id));
         await collection.DeleteManyAsync(filter);
     }
 
@@ -70,20 +70,12 @@ public class ItemsService
         return (await collection.FindAsync(filter)).ToList();
     }
 
-    public async Task<List<ItemCategory>> GetAllCategories(Game game)
+    public async Task DeleteBaseCategories(Game game, List<string>? ids = null)
     {
-        IMongoCollection<ItemCategory> baseCategories = m_Context.PoEBaseItemCategories;
-        IMongoCollection<ItemCategory> categories = m_Context.PoEItemCategories;
-        if (game == Game.POE2)
-        {
-            baseCategories = m_Context.PoE2BaseItemCategories;
-            categories = m_Context.PoE2ItemCategories;
-        }
-        var baseCategoriesTask = baseCategories.Find(Builders<ItemCategory>.Filter.Empty).ToListAsync();
-        var categoriesTask = categories.Find(Builders<ItemCategory>.Filter.Empty).ToListAsync();
-
-        await Task.WhenAll(baseCategoriesTask, categoriesTask);
-        return baseCategoriesTask.Result.Concat(categoriesTask.Result).ToList();
+        IMongoCollection<ItemCategory> collection = game == Game.POE1 ? m_Context.PoEBaseItemCategories 
+            : m_Context.PoE2BaseItemCategories;
+        var filter = Builders<ItemCategory>.Filter.Where(c => ids == null ? true : ids.Contains(c.Id));
+        await collection.DeleteManyAsync(filter);
     }
 
     public async Task<string> AddBaseCategory(Game game, ItemCategory category)
