@@ -1,35 +1,25 @@
 ﻿
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 
-public class Filter
+public class Filter: FilterBase
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
     [BsonElement("user")]
     public string User { get; set; } = string.Empty;
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
-    [BsonElement("game")]
-    public string Game { get; set; } = string.Empty;
-    [BsonElement("sections")]
-    public List<FilterSection> Sections { get; set; } = [];
+    [JsonPropertyName("strictness")]
+    public FilterStrictness Strictness { get; set; } = FilterStrictness.REGULAR;
     [BsonElement("created_at")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime CreatedAt { get; set; }
     [BsonElement("modified_at")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime ModifiedAt { get; set; }
-
-    public async Task<string> ToFilterString(ItemsService itemsService)
-    {
-        string filterStr = "";
-        for (int i = (Sections.Count - 1); i >= 0; i--)
-        {
-            filterStr += await Sections[i].ToFilterString(itemsService);
-        }
-        return filterStr;
-    }
+    [BsonElement("sections")]
+    public List<FilterSection> Sections { get; set; } = [];
+    [JsonPropertyName("defaultVersion")]
+    public uint DefaultVersion { get; set; } = 0;
 }

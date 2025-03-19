@@ -7,12 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(o => {
     o.JsonSerializerOptions.Converters.Add(new FilterRuleItemConverter());
+    o.JsonSerializerOptions.Converters.Add(new FilterRuleStructureItemConverter());
 });
 
 builder.Services.Configure<AuthConfig>(
     builder.Configuration.GetSection("Auth"));
 
 BsonSerializer.RegisterSerializer<IFilterRuleItem>(new FilterRuleItemSerializer());
+BsonSerializer.RegisterSerializer<IFilterRuleStructureItem>(new FilterRuleStructureItemSerializer());
+BsonSerializer.RegisterSerializer<IFilterRuleStructureDiffItem>(new FilterRuleStructureDiffItemSerializer());
 
 builder.Services.AddCors(c =>
 {
@@ -58,6 +61,9 @@ builder.Services.AddIdentityCore<User>()
 builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddSingleton<EncryptionService>();
 builder.Services.AddSingleton<FiltersService>();
+builder.Services.AddSingleton<FilterStructureService>();
+builder.Services.AddSingleton<FilterDiffService>();
+builder.Services.AddSingleton<DefaultFilterService>();
 builder.Services.AddSingleton<ItemsService>();
 builder.Services.AddSingleton<WikiService>();
 

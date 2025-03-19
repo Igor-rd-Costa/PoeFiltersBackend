@@ -11,15 +11,13 @@ namespace PoEFiltersBackend.Controllers
     {
         private readonly ItemsService m_ItemsService;
         private readonly UserManager<User> m_UserManager;
-        private readonly SignInManager<User> m_SignInManager;
         private readonly WikiService m_WikiService;
 
         public ItemCategoryController(ItemsService itemsService, UserManager<User> userManager, 
-            SignInManager<User> signInManager, WikiService wikiService)
+            WikiService wikiService)
         {
             m_ItemsService = itemsService;
             m_UserManager = userManager;
-            m_SignInManager = signInManager;
             m_WikiService = wikiService;
         }
 
@@ -166,7 +164,7 @@ namespace PoEFiltersBackend.Controllers
                 }
                 if (!found)
                 {
-                    removeCategories.Add(oldCategory.Id);
+                    removeCategories.Add(oldCategory.Id.ToString());
                     oldCategories.RemoveAt(i);
                     i--;
                 }
