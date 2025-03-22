@@ -1,5 +1,6 @@
 ﻿
 
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 
 public class DefaultFilterService
@@ -32,6 +33,15 @@ public class DefaultFilterService
         var collection = Collection(game);
         var filter = Builders<DefaultFilter>.Filter.Where(f => f.Strictness == strictness);
         return (await collection.Find(filter).Project(f => f.StructureVersion).FirstOrDefaultAsync());
+    }
+
+    public List<FilterStrictness> GetStrictnessesAsync(Game game)
+    {
+        var collection = Collection(game);
+        return collection.AsQueryable()
+            .GroupBy(f => f.Strictness)
+            .Select(g => g.First().Strictness)
+            .ToList();
     }
 
     public async Task<DefaultFilter> Add(Game game, FilterStrictness strictness)

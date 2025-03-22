@@ -15,7 +15,8 @@ builder.Services.Configure<AuthConfig>(
 
 BsonSerializer.RegisterSerializer<IFilterRuleItem>(new FilterRuleItemSerializer());
 BsonSerializer.RegisterSerializer<IFilterRuleStructureItem>(new FilterRuleStructureItemSerializer());
-BsonSerializer.RegisterSerializer<IFilterRuleStructureDiffItem>(new FilterRuleStructureDiffItemSerializer());
+BsonSerializer.RegisterSerializer<IFilterRuleItemDiff>(new FilterRuleItemDiffSerializer());
+BsonSerializer.RegisterSerializer<IFilterRuleStructureItemDiff>(new FilterRuleStructureItemDiffSerializer());
 
 builder.Services.AddCors(c =>
 {

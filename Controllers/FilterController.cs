@@ -106,7 +106,7 @@ namespace PoEFiltersBackend.Controllers
                 Strictness = info.Strictness,
                 CreatedAt = DateTime.UtcNow,
                 ModifiedAt = DateTime.UtcNow,
-                DefaultVersion = defaultFilter.DefaultVersion,
+                Version = defaultFilter.Version,
                 Sections = defaultFilter.Sections
             };
             await m_FiltersService.AddAsync(game, filter);

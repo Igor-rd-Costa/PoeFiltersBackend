@@ -27,7 +27,7 @@ public class FiltersService
     {
         var collection = (game == Game.POE1) ? m_Context.PoECollections.Filters : m_Context.PoE2Collections.Filters;
         await collection.InsertOneAsync(filter);
-    }
+    }   
 
     public async Task UpdateAsync(Game game, Filter filter)
     {

@@ -86,11 +86,52 @@ public class FilterRuleStructureItemSerializer : IBsonSerializer<IFilterRuleStru
     }
 }
 
-public class FilterRuleStructureDiffItemSerializer : IBsonSerializer<IFilterRuleStructureDiffItem>
+public class FilterRuleItemDiffSerializer : IBsonSerializer<IFilterRuleItemDiff>
 {
-    public Type ValueType => typeof(IFilterRuleStructureDiffItem);
+    public Type ValueType => typeof(IFilterRuleItemDiff);
 
-    public IFilterRuleStructureDiffItem Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    public IFilterRuleItemDiff Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+        var document = BsonSerializer.Deserialize<BsonDocument>(context.Reader);
+        var discriminator = (FilterRuleItemType)document["Type"].AsInt32;
+
+        return discriminator switch
+        {
+            FilterRuleItemType.RULE => BsonSerializer.Deserialize<FilterRuleDiff>(document),
+            FilterRuleItemType.RULE_BLOCK => BsonSerializer.Deserialize<FilterRuleBlockDiff>(document),
+            _ => throw new NotSupportedException($"Unknown discriminator: {discriminator}")
+        };
+    }
+
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, IFilterRuleItemDiff value)
+    {
+        BsonSerializer.Serialize(context.Writer, value.GetType(), value);
+    }
+
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
+    {
+        BsonSerializer.Serialize(context.Writer, value.GetType(), value);
+    }
+
+    object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+        var document = BsonSerializer.Deserialize<BsonDocument>(context.Reader);
+        var discriminator = (FilterRuleItemType)document["Type"].AsInt32;
+
+        return discriminator switch
+        {
+            FilterRuleItemType.RULE => BsonSerializer.Deserialize<FilterRuleDiff>(document),
+            FilterRuleItemType.RULE_BLOCK => BsonSerializer.Deserialize<FilterRuleBlockDiff>(document),
+            _ => throw new NotSupportedException($"Unknown discriminator: {discriminator}")
+        };
+    }
+}
+
+public class FilterRuleStructureItemDiffSerializer : IBsonSerializer<IFilterRuleStructureItemDiff>
+{
+    public Type ValueType => typeof(IFilterRuleStructureItemDiff);
+
+    public IFilterRuleStructureItemDiff Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
     {
         var document = BsonSerializer.Deserialize<BsonDocument>(context.Reader);
         var discriminator = (FilterRuleItemType)document["Type"].AsInt32;
@@ -103,7 +144,7 @@ public class FilterRuleStructureDiffItemSerializer : IBsonSerializer<IFilterRule
         };
     }
 
-    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, IFilterRuleStructureDiffItem value)
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, IFilterRuleStructureItemDiff value)
     {
         BsonSerializer.Serialize(context.Writer, value.GetType(), value);
     }

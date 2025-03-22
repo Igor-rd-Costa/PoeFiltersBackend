@@ -17,5 +17,5 @@ public class FilterDiff(uint version)
 
     [BsonIgnoreIfNull()]
     [JsonPropertyName("sectionChanges")]
-    public FilterUpdateChanges<FilterSection, FilterSectionDiff>? SectionChanges { get; set; } = null;
+    public FilterUpdateChanges<FilterSection, FilterSectionDiff> SectionChanges { get; set; } = new();
 }

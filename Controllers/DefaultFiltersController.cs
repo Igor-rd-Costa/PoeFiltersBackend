@@ -46,8 +46,10 @@ namespace PoEFiltersBackend.Controllers
                 FilterStructureDiff? diff = await m_FilterDiffService.GetStructureDiffAsync(game, df.StructureVersion);
                 if (diff != null)
                 {
-                    await m_FilterDiffService.ApplyDiffAsync(df, diff);
-                    df.StructureVersion = diff.Version;
+                    var newDefaultFilter = df;
+                    await m_FilterDiffService.ApplyDiffAsync(newDefaultFilter, diff);
+                    FilterDiff defaultFilterDiff = await m_FilterDiffService.MakeDiffAsync(df, newDefaultFilter);
+                    newDefaultFilter.StructureVersion = diff.Version;
                     await m_DefaultFilterService.SaveAsync(game, df);
                 }
             }
@@ -69,6 +71,23 @@ namespace PoEFiltersBackend.Controllers
             }
             uint version = await m_DefaultFilterService.GetVersionAsync(game, strictness);
             return Ok(version);
+        }
+
+        [HttpGet("strictnesses")]
+        public async Task<IActionResult> GetAvailableStrictnesses([FromRoute(Name = "game")] string gameStr)
+        {
+            User? user = await m_UserManager.GetUserAsync(User);
+            if (user == null || !user.IsAdmin)
+            {
+                return Unauthorized();
+            }
+            Game game;
+            if (!FilterHelpers.ParseGameString(gameStr, out game))
+            {
+                return BadRequest();
+            }
+            List<FilterStrictness> availableStrictnesses =  m_DefaultFilterService.GetStrictnessesAsync(game);
+            return Ok(availableStrictnesses);
         }
 
         [HttpPatch]

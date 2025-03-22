@@ -20,6 +20,6 @@ public class Filter: FilterBase
     public DateTime ModifiedAt { get; set; }
     [BsonElement("sections")]
     public List<FilterSection> Sections { get; set; } = [];
-    [JsonPropertyName("defaultVersion")]
-    public uint DefaultVersion { get; set; } = 0;
+    [JsonPropertyName("version")]
+    public uint Version { get; set; } = 0;
 }

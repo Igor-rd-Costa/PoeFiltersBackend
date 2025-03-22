@@ -16,7 +16,7 @@ public enum FilterRuleType
 
 public enum FilterStrictness
 {
-    REGULAR
+    REGULAR, STRICT
 }
 
 public interface IRuleItem
@@ -25,11 +25,17 @@ public interface IRuleItem
     public FilterRuleItemType Type { get; set; }
 }
 
+public interface IRuleItemDiff
+{
+    public Guid Id { get; set; }
+    public FilterRuleItemType Type { get; set; }
+}
+
 // Separate interfaces for MongoDB serialization/deserialization
 public interface IFilterRuleItem : IRuleItem { }
 public interface IFilterRuleStructureItem : IRuleItem { }
-public interface IFilterRuleDiffItem : IRuleItem { }
-public interface IFilterRuleStructureDiffItem : IRuleItem { }
+public interface IFilterRuleItemDiff : IRuleItemDiff { }
+public interface IFilterRuleStructureItemDiff : IRuleItemDiff { }
 
 public abstract class FilterComponent
 {
@@ -70,7 +76,7 @@ public abstract class FilterRulesContainer<T> : FilterImageComponent where T : I
     public List<T> Rules { get; set; } = [];
 }
 
-public abstract class FilterNullableComponent(Guid id)
+public abstract class FilterComponentDiff(Guid id)
 {
     [BsonGuidRepresentation(GuidRepresentation.Standard)]
     [JsonPropertyName("id")]
@@ -83,16 +89,26 @@ public abstract class FilterNullableComponent(Guid id)
     [BsonIgnoreIfNull]
     [JsonPropertyName("position")]
     public uint? Position { get; set; } = null;
+
+    public bool HasChanges()
+    {
+        return (Name != null || Position != null);
+    }
 }
 
-public abstract class FilterNullableImageComponent(Guid id) : FilterNullableComponent(id)
+public abstract class FilterImageComponentDiff(Guid id) : FilterComponentDiff(id)
 {
     [BsonIgnoreIfNull]
     [JsonPropertyName("imgSrc")]
     public string? ImgSrc { get; set; } = null;
+
+    public new bool HasChanges() 
+    {
+        return (base.HasChanges() || ImgSrc != null);
+    }
 }
 
-public abstract class FilterDiffRulesContainer<TAdded, TDiff>(Guid id) : FilterNullableImageComponent(id) where TAdded : IRuleItem where TDiff : IRuleItem
+public abstract class FilterRulesContainerDiff<TAdded, TDiff>(Guid id) : FilterImageComponentDiff(id) where TAdded : IRuleItem where TDiff : IRuleItemDiff
 {
     [BsonIgnoreIfNull]
     [JsonPropertyName("rulesType")]
@@ -109,6 +125,14 @@ public abstract class FilterDiffRulesContainer<TAdded, TDiff>(Guid id) : FilterN
     [BsonIgnoreIfNull]
     [JsonPropertyName("ruleChanges")]
     public FilterUpdateChanges<TAdded, TDiff> RuleChanges { get; set; } = new();
+
+    public new bool HasChanges()
+    {
+        return (base.HasChanges() || RulesType != null
+            || AllowedCategories != null || AllowUserCreatedRules != null
+            || RuleChanges.Added != null || RuleChanges.Removed != null 
+            || RuleChanges.Changed != null);
+    }
 }
 
 

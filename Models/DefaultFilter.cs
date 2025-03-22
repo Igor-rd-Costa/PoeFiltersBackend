@@ -10,6 +10,6 @@ public class DefaultFilter : FilterBase
     public List<FilterSection> Sections { get; set; } = [];
     [JsonPropertyName("structureVersion")]
     public uint StructureVersion { get; set; } = 0;
-    [JsonPropertyName("defaultVersion")]
-    public uint DefaultVersion { get; set; } = 0;
+    [JsonPropertyName("version")]
+    public uint Version { get; set; } = 0;
 }
